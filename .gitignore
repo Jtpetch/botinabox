@@ -12,6 +12,7 @@ servers/
 .vscode/
 build/
 dist/
+env/
 # User-specific files
 *.suo
 *.user
