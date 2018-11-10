@@ -1,6 +1,6 @@
 import discord
 import asyncio
-from src.utils.utils import *
+from ..utils.utils import *
 async def customCommHelp(message,client,sClass):
     commPref=sClass.commandPrefix
     text="***BotInABox Custom Commands Helpfile, v0.0.1***\n**<=======================================================>**\n"

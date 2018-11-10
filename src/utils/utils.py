@@ -2,11 +2,57 @@ import os
 import json
 from datetime import datetime
 from difflib import SequenceMatcher 
-from src.utils.bGlobals import *
-from src.storageclasses.serverclass import *
+from bGlobals import *
+from storageclasses.serverclass import *
 #GLOBALS===========================#
 max_logs=150
 #==================================#
+def update_bot():
+    #NOT WORKING YET
+    def update_script(git_repo:str,clone_to:str,source_file_location:str,base_dir:str):
+        def on_rm_error( func, path, exc_info):
+            # path contains the path of the file that couldn't be removed
+            # let's just assume that it's read-only and unlink it.
+            os.chmod( path, stat.S_IWRITE )
+            os.unlink( path )
+
+        def copytree(src, dst, symlinks=False, ignore=None):
+            for item in os.listdir(src):
+                s = os.path.join(src, item)
+                d = os.path.join(dst, item)
+                if os.path.isdir(s):
+                    shutil.copytree(s, d, symlinks, ignore)  
+                else:
+                    shutil.copy2(s, d)
+
+        def rmtree(src):
+            if not os.path.exists(src): return
+            while (True):
+                try:
+                    if os.path.isdir(src):
+                        shutil.rmtree(src,onerror=on_rm_error)
+                    else: 
+                        os.remove(src)
+                    break
+                except Exception as e:
+                    print(e)
+                    time.sleep(0.1)
+        
+        #Clone Repo
+        if os.path.isdir(clone_to):rmtree(clone_to)
+        Repo.clone_from(git_repo,clone_to).close()
+        #Get files to delete
+        for item in os.listdir(os.path.join(clone_to,source_file_location)): rmtree(item)
+        
+        #Copy new source files to current dir
+        copytree(os.path.join(clone_to,source_file_location),base_dir)
+        time.sleep(0.01)
+        rmtree(clone_to)
+    git_repo='https://github.com/wolfinabox/botinabox.git'
+    clone_to=os.path.join(script_dir,'botinabox_update')
+    source_file_location='src'
+    update_script(git_repo,clone_to,source_file_location,base_dir=script_dir)
+    os.execv(os.path.join(script_dir,'botinabox.py'), sys.argv)
 
 def loadID(location:str=os.path.join(script_dir, 'token.txt')):
     """

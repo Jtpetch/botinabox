@@ -4,10 +4,10 @@ import random
 import wikipedia
 import datetime,time
 from functools import partial
-from src.utils.bGlobals import *
-from src.utils.utils import *
-from src.storageclasses.serverclass import *
-from src.commands.customcommand import *
+from ..utils.bGlobals import *
+from ..utils.utils import *
+from ..storageclasses.serverclass import *
+from commands.customcommand import *
 #CLASSES===========================#
 class Reminder():
     def __init__(self,client,origMessage,msg,time):
@@ -29,7 +29,7 @@ commandDict['test']={'function':partial(commTest),'usage':'A test command.','typ
 #==================================#
 async def commHelp(message,client,sClass,**kwargs):
     strings = message.content.split(None,1)
-    helptext=stringOps(data=defaultHelpText,sClass=sClass)
+    helptext=stringOps(data=defaultHelpText,sClass=sClass,user=message.author)
     msg=""
     if len(strings)<2:
         msg=helptext
@@ -141,6 +141,7 @@ async def commSomeone(message,client,server,**kwargs):
     await client.send_message(message.channel,random.choice(formats).format(randomUser.mention))
 commandDict['someone']={'function':partial(commSomeone),'usage':'Mention someone at random','type':'general'}
 #==================================#
+
 #ADMIN COMMANDS====================#
 async def commPurge(message,client,**kwargs):
     strings=message.content.split()
@@ -191,12 +192,24 @@ commandDict['customcommand']={'function':partial(commCustomCommand),'usage':
 'type':'admin'}
 #==================================#
 
+#DEV COMMANDS======================#
+async def commUpdateCommand(message,client,sClasses,**kwargs):
+    if not hasPerm(message.author,'manage_server',message.channel):
+        raise NoPerm(strings[0])
+    msg=await client.send_message(message.channel,'Saving all servers...')
+    for sID,sClass in sClasses.items():
+        saveServer(sClass)
+    msg=await client.edit_message(msg,'Done saving! Restarting now (not for real tho).\n*(If I don\'t start working within a minute, get wolfinabox!)*')
+    #update_bot()
+commandDict['update']={'function':partial(commUpdateCommand),'usage':'Update the bot from <https://github.com/wolfinabox/botinabox.git> and restart','type':'dev'}
+#==================================#
+
 
 def commUsages(command:str,commandPrefix:str=defaultCommandPrefix):
     usage='`'+commandPrefix+command+'` '+commandDict[command]['usage'] if command in commandDict.keys() else 'No information on command `'+commandPrefix+command+'` found.'
     return usage
     
-def stringOps(data:str,sClass:serverClass=None,server:discord.server=None):
+def stringOps(data:str,sClass:serverClass=None,server:discord.Server=None,user:discord.User=None):
     #Generic replacements
     data = data.replace('$date$',datetime.now().strftime("%m/%d/%Y"))
     #Server Specific replacements
@@ -211,6 +224,10 @@ def stringOps(data:str,sClass:serverClass=None,server:discord.server=None):
             data=data.replace('$customCommands$','')
     if server is not None:
         data = data.replace('$serverName$',client.get_server(sClass.id).name)
+    #User Specific replacements
+    #Dev Commands
+    if sClass is not None and user is not None and user.id in dev_IDs:
+        data=data.replace('$devCommands$','**DEV Commands:**\n'+('\n'.join(commUsages(comm,sClass.commandPrefix) for comm in commandDict.keys() if commandDict[comm]['type']=='dev')))
     return data
 
 def hasPerm(member,permission,channel):

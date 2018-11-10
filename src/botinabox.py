@@ -4,16 +4,18 @@ from datetime import datetime#For date/time functions... who'd have guessed
 import sys,os
 sys.path.insert(0,'.')
 #My files
-from src.utils.utils import *
-from src.utils.bGlobals import *
-from src.commands.commands import *
-from src.commands.customcommand import *
+from utils.utils import *
+from utils.bGlobals import *
+from commands.commands import *
+from commands.customcommand import *
+from storageclasses.serverclass import *
 #GLOBALS===========================#
 clientID='id_here'
 client = discord.Client()
 sClasses={}
 #==================================#
 
+#==================================#
 #DISCORD CODE======================#
 #When the bot is ready
 @client.event
@@ -77,7 +79,8 @@ async def on_message(message):
         #It's a regular command
         elif command in commandDict.keys():
             try:
-                await commandDict[command]['function'](message=message,client=client,sClass=sClass,server=message.server)
+                #RUN THE COMMAND
+                await commandDict[command]['function'](message=message,client=client,sClass=sClass,server=message.server,sClasses=sClasses)
             except CommUsage as e:
                 await client.send_message(message.channel,commUsages(command))
             except NoPerm as e:
@@ -101,11 +104,8 @@ async def on_message(message):
                 msg+="*Try " + sClass.commandPrefix + "help to see all commands.*"
             await client.send_message(message.channel, msg)
    
-
-
     elif client.user.mentioned_in(message) and len(message.content.split())<2:
         await commandDict['help']['function'](message=message,client=client,sClass=sClass,server=message.server)
-
 
 #Start bot
 startTime = datetime.now()
@@ -127,5 +127,4 @@ except Exception as e:
     log(str(e))
     client.close()
     #input()
-
 #END DISCORD CODE
