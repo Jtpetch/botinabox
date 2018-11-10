@@ -57,7 +57,7 @@ def update_bot():
     source_file_location='src'
     update_script(git_repo,clone_to,source_file_location,base_dir=script_dir)
     print('Done updating, restarting...')
-    os.execv(os.path.join(script_dir,'botinabox.py'), sys.argv)
+    os.execv(sys.executable,[sys.executable]+ sys.argv)
 
 def loadID(location:str=os.path.join(script_dir, 'token.txt')):
     """
