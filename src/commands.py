@@ -200,7 +200,7 @@ async def commUpdateCommand(message,client,sClasses,**kwargs):
     for sID,sClass in sClasses.items():
         saveServer(sClass)
     msg=await client.edit_message(msg,'Done saving! Restarting now (not for real tho).\n*(If I don\'t start working within a minute, get wolfinabox!)*')
-    #update_bot()
+    update_bot()
 commandDict['update']={'function':partial(commUpdateCommand),'usage':'Update the bot from <https://github.com/wolfinabox/botinabox.git> and restart','type':'dev'}
 #==================================#
 

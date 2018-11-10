@@ -8,7 +8,6 @@ from serverclass import *
 max_logs=150
 #==================================#
 def update_bot():
-    #NOT WORKING YET
     def update_script(git_repo:str,clone_to:str,source_file_location:str,base_dir:str):
         def on_rm_error( func, path, exc_info):
             # path contains the path of the file that couldn't be removed
