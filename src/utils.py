@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 from difflib import SequenceMatcher 
 from bGlobals import *
-from storageclasses.serverclass import *
+from serverclass import *
 #GLOBALS===========================#
 max_logs=150
 #==================================#

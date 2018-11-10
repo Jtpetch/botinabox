@@ -4,11 +4,11 @@ from datetime import datetime#For date/time functions... who'd have guessed
 import sys,os
 sys.path.insert(0,'.')
 #My files
-from utils.utils import *
-from utils.bGlobals import *
-from commands.commands import *
-from commands.customcommand import *
-from storageclasses.serverclass import *
+from utils import *
+from bGlobals import *
+from commands import *
+from customcommand import *
+from serverclass import *
 #GLOBALS===========================#
 clientID='id_here'
 client = discord.Client()

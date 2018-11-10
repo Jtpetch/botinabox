@@ -4,10 +4,10 @@ import random
 import wikipedia
 import datetime,time
 from functools import partial
-from ..utils.bGlobals import *
-from ..utils.utils import *
-from ..storageclasses.serverclass import *
-from commands.customcommand import *
+from bGlobals import *
+from utils import *
+from serverclass import *
+from customcommand import *
 #CLASSES===========================#
 class Reminder():
     def __init__(self,client,origMessage,msg,time):
