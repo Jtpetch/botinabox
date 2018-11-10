@@ -1,6 +1,5 @@
 import os
 import sys
-from utils import *
 #Perms
 #These are to allow only very specific users to run "backend commands"
 dev_IDs=['398022816408141854']

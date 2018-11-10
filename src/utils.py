@@ -7,6 +7,7 @@ from serverclass import *
 from git import Repo
 import shutil
 import time
+import stat
 #GLOBALS===========================#
 max_logs=150
 #==================================#
@@ -50,10 +51,12 @@ def update_bot():
         copytree(os.path.join(clone_to,source_file_location),base_dir)
         time.sleep(0.01)
         rmtree(clone_to)
+    print('Updating!')
     git_repo='https://github.com/wolfinabox/botinabox.git'
     clone_to=os.path.join(script_dir,'botinabox_update')
     source_file_location='src'
     update_script(git_repo,clone_to,source_file_location,base_dir=script_dir)
+    print('Done updating, restarting...')
     os.execv(os.path.join(script_dir,'botinabox.py'), sys.argv)
 
 def loadID(location:str=os.path.join(script_dir, 'token.txt')):
