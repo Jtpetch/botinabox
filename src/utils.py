@@ -1,164 +1,77 @@
-import os
 import json
-from datetime import datetime
-from difflib import SequenceMatcher 
-from bGlobals import *
-from serverclass import *
-from git import Repo
-import shutil
-import time
-import stat
-#GLOBALS===========================#
-max_logs=150
-#==================================#
-def update_bot():
-    def update_script(git_repo:str,clone_to:str,source_file_location:str,base_dir:str):
-        def on_rm_error( func, path, exc_info):
-            # path contains the path of the file that couldn't be removed
-            # let's just assume that it's read-only and unlink it.
-            os.chmod( path, stat.S_IWRITE )
-            os.unlink( path )
+import os
+from wolfinaboxutils.system import script_dir
+# Perms
+# These are to allow only very specific users to run "backend commands"
+dev_IDs = ['398022816408141854']
+# Defaults
+defaultCommandPrefix = '&'
+# defaultLogChannelName='logs'
 
-        def copytree(src, dst, symlinks=False, ignore=None):
-            for item in os.listdir(src):
-                s = os.path.join(src, item)
-                d = os.path.join(dst, item)
-                if os.path.isdir(s):
-                    shutil.copytree(s, d, symlinks, ignore)  
-                else:
-                    shutil.copy2(s, d)
+defaultHelpText = """***$bot_name$ Helpfile, v2.0.0***
+**<===================================================================>**
+*Either use the command prefix ("$comm_prefix$help"), or mention me ("$bot_mention$ help")to run a command!*
+$general_commands$
+$admin_commands$
+$dev_commands$
+$custom_commands$
+**<===================================================================>**"""
+defaultMotd = """**/\\/\\/\\$serverName$ Message Of The Day $date$/\\/\\/\\**
+**<======================================================>**
+Have a fantastic day!"""
 
-        def rmtree(src):
-            if not os.path.exists(src): return
-            while (True):
-                try:
-                    if os.path.isdir(src):
-                        shutil.rmtree(src,onerror=on_rm_error)
-                    else: 
-                        os.remove(src)
-                    break
-                except Exception as e:
-                    print(e)
-                    time.sleep(0.1)
-        
-        #Clone Repo
-        if os.path.isdir(clone_to):rmtree(clone_to)
-        Repo.clone_from(git_repo,clone_to).close()
-        #Get files to delete
-        for item in os.listdir(os.path.join(clone_to,source_file_location)): rmtree(item)
-        
-        #Copy new source files to current dir
-        copytree(os.path.join(clone_to,source_file_location),base_dir)
-        time.sleep(0.01)
-        rmtree(clone_to)
-    print('Updating!')
-    git_repo='https://github.com/wolfinabox/botinabox.git'
-    clone_to=os.path.join(script_dir,'botinabox_update')
-    source_file_location='src'
-    update_script(git_repo,clone_to,source_file_location,base_dir=script_dir)
-    print('Done updating, restarting...')
-    os.execv(sys.executable,[sys.executable]+ sys.argv)
+default_config = {'token': 'bot_token_here','status':'Mention me for help!'}
+# Functions
 
-def loadID(location:str=os.path.join(script_dir, 'token.txt')):
+
+def loadConfig(location: str = os.path.join(script_dir(), 'config.json')):
     """
-    Loads the bot's client ID from the "token.txt" file
-    :returns: The loaded ID
+    Loads the bot's config from the supplied config json file.
+    :returns: The loaded config object
     :throws: FileNotFoundError, if token.txt file not found
     """
-    file = open(location)
-    id=file.readline().strip()
-    return id
+    return json.load(open(location))
 
-def pLog(message:str,logFilePath:str=os.path.join(script_dir, 'log.txt')):
+
+def format_replace(s, **kwargs):
     """
-    Prints and logs the given message to file
-    :param message: The message to print/log
-    :param logFilePath: The path to the logging file
+    Format strings to replace inset variables (eg: "$bot_name$" -> "Botinabox")\n
+    <s> : String to format\n
+    <**kwargs> : A dictionary of variable:replacement pairs.\n
+    Default replacements: $bot_name$, $bot_mention$, $general_command$, $admin_commands$, $custom_commands$, $dev_commands$, $comm_prefix$
     """
-    print(message)
-    log(message,logFilePath)
+    replaced = -1
+    while replaced != 0:
+        replaced = 0
+        for key, val in kwargs.items():
+            replaced += ('$'+key+'$' in s)
+            s = s.replace('$'+key+'$', val)
+    return s
 
-def log(message:str,logFilePath:str=os.path.join(script_dir, 'log.txt')):
+
+def case_insens_replace(string: str, search: str, replacement: str):
     """
-    Logs the given message to file
-    :param message: The message to log
-    :param logFilePath: The path to the logging file
+    Replace any instance of <search> in <string> with <replacement>, regardless of case.\n
+    <string> The string to search in\n
+    <search> The string to replace
+    <replacement> The string to replace with.\n
+    If <replacement> contains $orig$, $orig$ will be substituted for the original string found.
     """
-    message=message.replace('\n',' ').replace('\r',' ')
-    try:
-        num_lines = sum(1 for line in open(logFilePath))
-        if num_lines>=max_logs:
-            lines=open(logFilePath, 'r').readlines()
-            del lines[0]
-            lines.append(datetime.now().strftime('[%m/%d/%Y-%H:%M:%S]: ')+message+'\n')
-            with open(logFilePath,'w') as file:
-                file.writelines(lines)
-        else:
-            with open(logFilePath,'a') as file:
-                file.write(datetime.now().strftime('[%m/%d/%Y-%H:%M:%S]: ')+message+'\n')
-    except IOError:
-        with open(logFilePath,'w') as file:
-            file.write(datetime.now().strftime('[%m/%d/%Y-%H:%M:%S]: ')+message+'\n')
+    from pyparsing import CaselessLiteral, originalTextFor
+    expr = CaselessLiteral(search)
+    res = originalTextFor(expr, asString=True).searchString(string)
+    for r in res:
+        repl = format_replace(replacement, orig=r[0])
+        string = string.replace(r[0], repl)
+    return string
 
-def truncate(data:str,length:int,append:str=''):
+
+def alias_get(alias,dictionary:dict):
     """
-    Truncates a string to the given length
-    :param data: The string to truncate
-    :param length: The length to truncate to
-    :param append: Text to append to the end of truncated string
+    For a dictionary with tuples as keys, get the value at the key that contains the given alias.\n
+    <alias> The alias to search for\n
+    <dictionary> The dict to search through
     """
-    return (data[:length]+append) if len(data)>length else data
-
-def isInt(s:str):
-    try: 
-        int(s)
-        return True
-    except ValueError:
-        return False
-
-def timeToSec(s:str):
-    #Format: 00:00:00 (hour:minute:second)
-    seconds=0
-    strings=s.split(':')
-    if len(strings)>3: raise ValueError()
-    multiplier=1
-    for string in strings[::-1]:
-        if not isInt(string): raise ValueError()
-        seconds+=(int(string)*multiplier)
-        multiplier*=60
-    return seconds
-
-def similar(a, b):
-    return SequenceMatcher(None, a, b).ratio()
-
-def any_in(a, b):
-  return not set(a).isdisjoint(b)
-
-def loadServer(id,folderPath=os.path.join(script_dir,'resources','servers')):
-    path=os.path.join(folderPath,id+'.json')
-    #If the file does not exist
-    if not os.path.isfile(path): return None
-    temp={}
-    with open(path,'r') as f:
-        temp=json.load(f)
-    sClass=serverClass(temp['id'])
-    sClass.commandPrefix=(temp['commandPrefix'] if 'commandPrefix' in temp else defaultCommandPrefix )
-    sClass.customCommands=(temp['customCommands'] if 'customCommands' in temp else [])
-    return sClass
-
-def saveServer(serverClass,folderPath=os.path.join(script_dir,'resources','servers')):
-    path=os.path.join(folderPath,serverClass.id+'.json')
-    data={'id':serverClass.id,'commandPrefix':serverClass.commandPrefix,'customCommands':serverClass.customCommands}
-    with open(path,'w') as f:
-        json.dump(data,f,indent=4)
-    
-
-class CommUsage(Exception):
-    def __init__(self,arg):
-        self.sterror = arg
-        self.args = {arg}
-
-class NoPerm(Exception):
-    def __init__(self,arg):
-        self.sterror = arg
-        self.args = {arg}
+    for key,val in dictionary.items():
+        if alias in key:
+            return val
