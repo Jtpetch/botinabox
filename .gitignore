@@ -7,6 +7,7 @@
 *.spec
 backup.py
 token.txt
+config.json
 log.txt
 servers/
 .vscode/
