@@ -5,8 +5,6 @@
 *.sln
 *.pyproj
 *.spec
-backup.py
-token.txt
 config.json
 log.txt
 servers/

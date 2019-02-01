@@ -128,19 +128,16 @@ try:
     client = Client()
     client.run(config['token'])
 except discord.LoginFailure as e:
-    client.logout()
     print('The bot token in "config.json" appears to be incorrect. Please double-check that you used the correct\nbot id from https://discordapp.com/developers/applications/.')
     input('Press return to exit...')
     sys.exit(-1)
 except FileNotFoundError as e:
-    client.logout()
     print("Couldn\'t  open config file. (If this is the first run, that\'s okay!)\nPlease edit \"config.json\", and set the token to your bot token acquired from:\nhttps://discordapp.com/developers/applications/\nThen restart the script.")
     json.dump(default_config, open(os.path.join(
         script_dir(), 'config.json'), 'w'), indent=4)
     input('Press return to exit...')
     sys.exit(-1)
 except Exception as e:
-    client.logout()
     print('I can\'t connect to the Discord servers right now, sorry! :(\nCheck your internet connection, and then https://twitter.com/discordapp for Discord downtimes,\n and then try again later.')
     input('Press return to exit...')
     sys.exit(-1)
